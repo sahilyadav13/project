@@ -1,0 +1,672 @@
+import React, { useState } from 'react';
+import { Tab, Tabs, TabList, TabPanel } from 'react-tabs';
+import 'react-tabs/style/react-tabs.css';
+import 'bootstrap/dist/css/bootstrap.min.css';
+
+import './Order.css';
+
+const TechnicalDashboard = ({ symbol }) => {
+  // Chart-related states
+  const [activeChartType, setActiveChartType] = useState('candles');
+  const [timeframe, setTimeframe] = useState('1D');
+  const [isReplayMode, setIsReplayMode] = useState(false);
+  const [replaySpeed, setReplaySpeed] = useState(1);
+  const [activeIndicator, setActiveIndicator] = useState(null);
+  
+  // Sample Indian stock data
+  const stockData = {
+    symbol: symbol || 'RELIANCE',
+    name: 'Reliance Industries Ltd',
+    exchange: 'NSE',
+    currentPrice: 2850.50,
+    change: '+42.25 (1.51%)',
+    charts: {
+      candles: { data: [], config: {} },
+      bars: { data: [], config: {} },
+      heikinAshi: { data: [], config: {} },
+      // Add all other chart types
+    },
+    indicators: [
+      { name: 'Moving Average', type: 'MA', params: { period: 20 } },
+      { name: 'RSI', type: 'RSI', params: { period: 14 } },
+      // Add more indicators
+    ]
+  };
+
+  const chartTypes = [
+    { id: 'candles', name: 'Candles', icon: '📊' },
+    { id: 'bars', name: 'Bars', icon: '📈' },
+    { id: 'heikin-ashi', name: 'Heikin Ashi', icon: '🔄' },
+    { id: 'renko', name: 'Renko', icon: '🧱' },
+    { id: 'point-and-figure', name: 'Point & Figure', icon: '✖️' },
+    { id: 'kagi', name: 'Kagi', icon: '〰️' },
+    { id: 'line', name: 'Line', icon: '➖' },
+    { id: 'area', name: 'Area', icon: '🔶' },
+    { id: 'baseline', name: 'Baseline', icon: '📉' },
+    { id: 'hollow-candles', name: 'Hollow Candles', icon: '🕯️' },
+    { id: 'volume-candles', name: 'Volume Candles', icon: '💹' },
+    { id: 'volume-footprint', name: 'Volume Footprint', icon: '👣' },
+    { id: 'tpo', name: 'Time Price Opportunity', icon: '⏱️' },
+    { id: 'session-volume-profile', name: 'Session Volume Profile', icon: '📅' }
+  ];
+
+  const timeframes = [
+    { id: '1m', name: '1 min' },
+    { id: '5m', name: '5 min' },
+    { id: '15m', name: '15 min' },
+    { id: '1H', name: '1 hour' },
+    { id: '4H', name: '4 hours' },
+    { id: '1D', name: '1 day' },
+    { id: '1W', name: '1 week' },
+    { id: '1M', name: '1 month' }
+  ];
+
+  const replaySpeeds = [
+    { value: 0.5, label: '0.5x' },
+    { value: 1, label: '1x' },
+    { value: 2, label: '2x' },
+    { value: 5, label: '5x' }
+  ];
+
+  // Technical indicators data from the second component
+  const technicalData = {
+    topGainers: [
+      { company: "BSE Limited", price: "5,479.80", change: "+16.98%" },
+      { company: "IGL", price: "203.12", change: "+3.9%" },
+      { company: "Poonawalla Fin", price: "350.45", change: "+3.5%" },
+      { company: "Tata Power", price: "412.30", change: "+3.2%" },
+      { company: "Adani Green", price: "1,245.50", change: "+2.9%" },
+      { company: "HDFC Life", price: "685.75", change: "+2.5%" }
+    ],
+    topLosers: [
+      { company: "Ruchinfra", price: "6.58", change: "-17.13%" },
+      { company: "Kanani Ind", price: "1.65", change: "-16.67%" },
+      { company: "Aegis Logistics", price: "805.45", change: "-10.76%" },
+      { company: "Vodafone Idea", price: "8.90", change: "-9.5%" },
+      { company: "Yes Bank", price: "14.25", change: "-8.3%" },
+      { company: "PNB", price: "45.60", change: "-7.8%" }
+    ],
+    onlyBuyers: [
+      { company: "Reliance", price: "2,450", volume: "5.2M" },
+      { company: "TCS", price: "3,250", volume: "3.8M" },
+      { company: "HDFC Bank", price: "1,650", volume: "2.9M" },
+      { company: "Infosys", price: "1,550", volume: "2.5M" },
+      { company: "ICICI Bank", price: "950", volume: "2.1M" },
+      { company: "Bharti Airtel", price: "890", volume: "1.8M" }
+    ],
+    onlySellers: [
+      { company: "Yes Bank", price: "14.25", volume: "28.5M" },
+      { company: "Vodafone Idea", price: "8.90", volume: "45.2M" },
+      { company: "Suzlon Energy", price: "18.75", volume: "35.7M" },
+      { company: "JP Associates", price: "12.40", volume: "30.1M" },
+      { company: "IDBI Bank", price: "55.60", volume: "25.3M" },
+      { company: "Bank of Baroda", price: "185.40", volume: "22.8M" }
+    ],
+    week52High: [
+      { company: "Adani Ports", price: "985.50", prevHigh: "980.25" },
+      { company: "Bajaj Finance", price: "7,850", prevHigh: "7,800" },
+      { company: "Asian Paints", price: "3,250", prevHigh: "3,230" },
+      { company: "HUL", price: "2,450", prevHigh: "2,440" },
+      { company: "Nestle", price: "18,500", prevHigh: "18,450" },
+      { company: "Britannia", price: "3,850", prevHigh: "3,820" }
+    ],
+    week52Low: [
+      { company: "Zee Entertainment", price: "145.60", prevLow: "150.25" },
+      { company: "Tata Motors", price: "425.80", prevLow: "430.50" },
+      { company: "Vodafone Idea", price: "8.90", prevLow: "9.25" },
+      { company: "Yes Bank", price: "14.25", prevLow: "15.00" },
+      { company: "PNB", price: "45.60", prevLow: "47.50" },
+      { company: "IDBI Bank", price: "55.60", prevLow: "58.00" }
+    ],
+    priceShockers: [
+      { company: "IRCTC", price: "1,250", change: "+12.5%" },
+      { company: "Rail Vikas", price: "45.60", change: "+9.8%" },
+      { company: "Tata Elxsi", price: "7,850", change: "+8.9%" },
+      { company: "Persistent", price: "4,250", change: "+7.6%" },
+      { company: "KPIT Tech", price: "1,150", change: "+6.8%" },
+      { company: "Coforge", price: "5,250", change: "+6.2%" }
+    ],
+    volumeShockers: [
+      { company: "Suzlon Energy", volume: "85M", avgVolume: "25M" },
+      { company: "JP Associates", volume: "120M", avgVolume: "40M" },
+      { company: "Reliance Power", volume: "75M", avgVolume: "20M" },
+      { company: "Yes Bank", volume: "65M", avgVolume: "18M" },
+      { company: "Vodafone Idea", volume: "95M", avgVolume: "30M" },
+      { company: "IDFC First Bank", volume: "55M", avgVolume: "15M" }
+    ],
+    positiveBreakouts: [
+      { company: "HDFC Bank", price: "1,650", breakout: "1,620" },
+      { company: "Infosys", price: "1,550", breakout: "1,530" },
+      { company: "ICICI Bank", price: "950", breakout: "940" },
+      { company: "Bharti Airtel", price: "890", breakout: "880" },
+      { company: "L&T", price: "3,250", breakout: "3,220" },
+      { company: "ITC", price: "425", breakout: "420" }
+    ],
+    negativeBreakouts: [
+      { company: "Kotak Bank", price: "1,720", breakdown: "1,750" },
+      { company: "Axis Bank", price: "950", breakdown: "980" },
+      { company: "SBI", price: "580", breakdown: "600" },
+      { company: "HDFC Life", price: "685", breakdown: "700" },
+      { company: "Bajaj Finserv", price: "1,650", breakdown: "1,680" },
+      { company: "Maruti", price: "9,250", breakdown: "9,300" }
+    ],
+    bullishReversals: [
+      { company: "ITC", price: "425", pattern: "Hammer" },
+      { company: "SBI", price: "580", pattern: "Morning Star" },
+      { company: "Tata Steel", price: "125", pattern: "Piercing Line" },
+      { company: "JSW Steel", price: "850", pattern: "Bullish Engulfing" },
+      { company: "Hindalco", price: "525", pattern: "Inverted Hammer" },
+      { company: "Coal India", price: "225", pattern: "Tweezer Bottom" }
+    ],
+    bearishReversals: [
+      { company: "HUL", price: "2,450", pattern: "Shooting Star" },
+      { company: "Nestle", price: "18,500", pattern: "Evening Star" },
+      { company: "Britannia", price: "3,850", pattern: "Dark Cloud" },
+      { company: "Dabur", price: "580", pattern: "Bearish Engulfing" },
+      { company: "Colgate", price: "1,650", pattern: "Hanging Man" },
+      { company: "Godrej Consumer", price: "950", pattern: "Gravestone" }
+    ],
+    gapUp: [
+      { company: "Bharti Airtel", price: "890", gap: "25.50" },
+      { company: "Tata Steel", price: "125", gap: "3.20" },
+      { company: "Reliance", price: "2,450", gap: "35.00" },
+      { company: "TCS", price: "3,250", gap: "45.00" },
+      { company: "HDFC Bank", price: "1,650", gap: "22.50" },
+      { company: "Infosys", price: "1,550", gap: "18.75" }
+    ],
+    gapDown: [
+      { company: "ONGC", price: "165", gap: "4.80" },
+      { company: "Coal India", price: "225", gap: "6.50" },
+      { company: "NTPC", price: "180", gap: "3.20" },
+      { company: "Power Grid", price: "220", gap: "4.50" },
+      { company: "IOC", price: "125", gap: "2.80" },
+      { company: "BPCL", price: "450", gap: "7.20" }
+    ],
+    bullishIsland: [
+      { company: "Asian Paints", price: "3,250", gap: "85.00" },
+      { company: "UltraTech", price: "7,850", gap: "120.00" },
+      { company: "Eicher Motors", price: "3,850", gap: "95.00" },
+      { company: "Pidilite", price: "2,450", gap: "65.00" },
+      { company: "Page Industries", price: "35,000", gap: "1,200.00" },
+      { company: "Titan", price: "3,250", gap: "85.00" }
+    ],
+    bearishIsland: [
+      { company: "Grasim", price: "1,650", gap: "45.00" },
+      { company: "Hero Motocorp", price: "2,850", gap: "65.00" },
+      { company: "Bajaj Auto", price: "3,850", gap: "75.00" },
+      { company: "M&M", price: "1,450", gap: "35.00" },
+      { company: "Maruti", price: "9,250", gap: "150.00" },
+      { company: "TVS Motor", price: "1,250", gap: "45.00" }
+    ],
+    bullishEngulfing: [
+      { company: "Eicher Motors", price: "3,850", pattern: "Bullish Engulfing" },
+      { company: "Maruti", price: "9,250", pattern: "Bullish Engulfing" },
+      { company: "Tata Motors", price: "425", pattern: "Bullish Engulfing" },
+      { company: "Ashok Leyland", price: "185", pattern: "Bullish Engulfing" },
+      { company: "Bajaj Auto", price: "3,850", pattern: "Bullish Engulfing" },
+      { company: "Hero Motocorp", price: "2,850", pattern: "Bullish Engulfing" }
+    ],
+    bearishEngulfing: [
+      { company: "Sun Pharma", price: "950", pattern: "Bearish Engulfing" },
+      { company: "Dr Reddy's", price: "5,250", pattern: "Bearish Engulfing" },
+      { company: "Cipla", price: "1,150", pattern: "Bearish Engulfing" },
+      { company: "Lupin", price: "1,050", pattern: "Bearish Engulfing" },
+      { company: "Biocon", price: "285", pattern: "Bearish Engulfing" },
+      { company: "Divis Labs", price: "3,850", pattern: "Bearish Engulfing" }
+    ],
+    piercingLine: [
+      { company: "Cipla", price: "1,150", pattern: "Piercing Line" },
+      { company: "Lupin", price: "1,050", pattern: "Piercing Line" },
+      { company: "Aurobindo", price: "650", pattern: "Piercing Line" },
+      { company: "Torrent Pharma", price: "1,850", pattern: "Piercing Line" },
+      { company: "Alkem Labs", price: "3,250", pattern: "Piercing Line" },
+      { company: "Glenmark", price: "850", pattern: "Piercing Line" }
+    ],
+    darkCloud: [
+      { company: "BPCL", price: "450", pattern: "Dark Cloud Cover" },
+      { company: "IOC", price: "125", pattern: "Dark Cloud Cover" },
+      { company: "HPCL", price: "350", pattern: "Dark Cloud Cover" },
+      { company: "GAIL", price: "185", pattern: "Dark Cloud Cover" },
+      { company: "ONGC", price: "165", pattern: "Dark Cloud Cover" },
+      { company: "Oil India", price: "285", pattern: "Dark Cloud Cover" }
+    ],
+    openingHigher: [
+      { company: "Wipro", price: "450", change: "+1.5%" },
+      { company: "Tech Mahindra", price: "1,150", change: "+2.1%" },
+      { company: "HCL Tech", price: "1,250", change: "+1.8%" },
+      { company: "LTIMindtree", price: "5,250", change: "+2.5%" },
+      { company: "Mphasis", price: "2,450", change: "+1.2%" },
+      { company: "Coforge", price: "5,250", change: "+2.8%" }
+    ],
+    openingLower: [
+      { company: "NTPC", price: "180", change: "-1.2%" },
+      { company: "Power Grid", price: "220", change: "-0.8%" },
+      { company: "Tata Power", price: "412", change: "-1.5%" },
+      { company: "Adani Power", price: "450", change: "-2.1%" },
+      { company: "Torrent Power", price: "850", change: "-0.9%" },
+      { company: "NHPC", price: "45", change: "-1.1%" }
+    ],
+    abovePreviousHigh: [
+      { company: "Dabur", price: "580", prevHigh: "575" },
+      { company: "Britannia", price: "3,850", prevHigh: "3,820" },
+      { company: "Colgate", price: "1,650", prevHigh: "1,640" },
+      { company: "Godrej Consumer", price: "950", prevHigh: "945" },
+      { company: "Emami", price: "450", prevHigh: "445" },
+      { company: "Marico", price: "550", prevHigh: "545" }
+    ],
+    belowPreviousLow: [
+      { company: "IndusInd Bank", price: "1,150", prevLow: "1,180" },
+      { company: "Bandhan Bank", price: "250", prevLow: "260" },
+      { company: "Federal Bank", price: "145", prevLow: "150" },
+      { company: "RBL Bank", price: "185", prevLow: "190" },
+      { company: "AU Small Finance", price: "650", prevLow: "660" },
+      { company: "IDFC First Bank", price: "85", prevLow: "88" }
+    ]
+  };
+
+  const renderChart = () => {
+    return (
+      <div className="chart-container">
+        <div className="chart-header">
+          <h3>{stockData.name} ({stockData.symbol})</h3>
+          <div className="price-display">
+            <span className="price">{stockData.currentPrice}</span>
+            <span className="change positive">{stockData.change}</span>
+          </div>
+        </div>
+        <div className="chart-placeholder">
+          <p>Displaying {activeChartType} chart for {stockData.symbol}</p>
+          <p>Timeframe: {timeframe}</p>
+          {activeIndicator && <p>Active Indicator: {activeIndicator}</p>}
+          {isReplayMode && <p>Replay Mode: {replaySpeed}x speed</p>}
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="technical-dashboard">
+      <div className="dashboard-header">
+        <h1>Advanced Technical Analysis</h1>
+        <p>Professional charts and tools for the Indian stock market</p>
+      </div>
+
+      <div className="toolbar">
+        <div className="timeframe-selector">
+          {timeframes.map(tf => (
+            <button
+              key={tf.id}
+              className={`timeframe-btn ${timeframe === tf.id ? 'active' : ''}`}
+              onClick={() => setTimeframe(tf.id)}
+            >
+              {tf.name}
+            </button>
+          ))}
+        </div>
+
+        <div className="chart-type-selector">
+          <select 
+            value={activeChartType}
+            onChange={(e) => setActiveChartType(e.target.value)}
+          >
+            {chartTypes.map(chart => (
+              <option key={chart.id} value={chart.id}>
+                {chart.icon} {chart.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="replay-controls">
+          <button 
+            className={`replay-btn ${isReplayMode ? 'active' : ''}`}
+            onClick={() => setIsReplayMode(!isReplayMode)}
+          >
+            {isReplayMode ? '❚❚ Pause' : '▶ Replay'}
+          </button>
+          
+          {isReplayMode && (
+            <select
+              value={replaySpeed}
+              onChange={(e) => setReplaySpeed(parseFloat(e.target.value))}
+            >
+              {replaySpeeds.map(speed => (
+                <option key={speed.value} value={speed.value}>
+                  {speed.label}
+                </option>
+              ))}
+            </select>
+          )}
+        </div>
+      </div>
+
+      <div className="main-content">
+        <div className="chart-area">
+          {renderChart()}
+        </div>
+
+        <div className="sidebar">
+          <Tabs>
+            <TabList>
+              <Tab>Indicators</Tab>
+              <Tab>Drawing Tools</Tab>
+              <Tab>Analysis</Tab>
+              <Tab>Market Data</Tab>
+            </TabList>
+
+            <TabPanel>
+              <h3>Technical Indicators</h3>
+              <div className="indicator-list">
+                {stockData.indicators.map(ind => (
+                  <div 
+                    key={ind.name}
+                    className={`indicator-item ${activeIndicator === ind.name ? 'active' : ''}`}
+                    onClick={() => setActiveIndicator(ind.name)}
+                  >
+                    {ind.name}
+                  </div>
+                ))}
+              </div>
+            </TabPanel>
+
+            <TabPanel>
+              <h3>Drawing Tools</h3>
+              <div className="drawing-tools">
+                <button className="drawing-btn">📏 Trend Line</button>
+                <button className="drawing-btn">🔼 Triangle</button>
+                <button className="drawing-btn">⏹️ Rectangle</button>
+                <button className="drawing-btn">🔄 Fibonacci</button>
+                <button className="drawing-btn">📐 Gann</button>
+              </div>
+            </TabPanel>
+
+            <TabPanel>
+              <h3>Market Analysis</h3>
+              <div className="analysis-tools">
+                <button className="analysis-btn">📈 Volume Profile</button>
+                <button className="analysis-btn">🔄 Seasonality</button>
+                <button className="analysis-btn">🔍 Pattern Recognition</button>
+                <button className="analysis-btn">📊 Market Structure</button>
+              </div>
+            </TabPanel>
+
+            <TabPanel>
+              <div className="market-data-tabs">
+                <Tabs>
+                  <TabList>
+                    <Tab>Gainers/Losers</Tab>
+                    <Tab>Breakouts</Tab>
+                    <Tab>Patterns</Tab>
+                  </TabList>
+
+                  <TabPanel>
+                    <DashboardCard 
+                      title="Top Gainers" 
+                      data={technicalData.topGainers} 
+                      columns={[
+                        { header: "Company", accessor: "company", width: "40%" },
+                        { header: "Price", accessor: "price", width: "30%" },
+                        { header: "Change", accessor: "change", width: "30%", isChange: true }
+                      ]}
+                    />
+                    <DashboardCard 
+                      title="Top Losers" 
+                      data={technicalData.topLosers} 
+                      columns={[
+                        { header: "Company", accessor: "company", width: "40%" },
+                        { header: "Price", accessor: "price", width: "30%" },
+                        { header: "Change", accessor: "change", width: "30%", isChange: true }
+                      ]}
+                    />
+                    <DashboardCard 
+                      title="52 Week High" 
+                      data={technicalData.week52High} 
+                      columns={[
+                        { header: "Company", accessor: "company", width: "40%" },
+                        { header: "Price", accessor: "price", width: "30%" },
+                        { header: "Prev High", accessor: "prevHigh", width: "30%" }
+                      ]}
+                    />
+                    <DashboardCard 
+                      title="52 Week Low" 
+                      data={technicalData.week52Low} 
+                      columns={[
+                        { header: "Company", accessor: "company", width: "40%" },
+                        { header: "Price", accessor: "price", width: "30%" },
+                        { header: "Prev Low", accessor: "prevLow", width: "30%" }
+                      ]}
+                    />
+                  </TabPanel>
+
+                  <TabPanel>
+                    <DashboardCard 
+                      title="Positive Breakouts" 
+                      data={technicalData.positiveBreakouts} 
+                      columns={[
+                        { header: "Company", accessor: "company", width: "50%" },
+                        { header: "Price", accessor: "price", width: "25%" },
+                        { header: "Breakout", accessor: "breakout", width: "25%" }
+                      ]}
+                    />
+                    <DashboardCard 
+                      title="Negative Breakouts" 
+                      data={technicalData.negativeBreakouts} 
+                      columns={[
+                        { header: "Company", accessor: "company", width: "50%" },
+                        { header: "Price", accessor: "price", width: "25%" },
+                        { header: "Breakdown", accessor: "breakdown", width: "25%" }
+                      ]}
+                    />
+                    <DashboardCard 
+                      title="Above Previous Highs" 
+                      data={technicalData.abovePreviousHigh} 
+                      columns={[
+                        { header: "Company", accessor: "company", width: "40%" },
+                        { header: "Price", accessor: "price", width: "30%" },
+                        { header: "Prev High", accessor: "prevHigh", width: "30%" }
+                      ]}
+                    />
+                    <DashboardCard 
+                      title="Below Previous Lows" 
+                      data={technicalData.belowPreviousLow} 
+                      columns={[
+                        { header: "Company", accessor: "company", width: "40%" },
+                        { header: "Price", accessor: "price", width: "30%" },
+                        { header: "Prev Low", accessor: "prevLow", width: "30%" }
+                      ]}
+                    />
+                  </TabPanel>
+
+                  <TabPanel>
+                    <DashboardCard 
+                      title="Bullish Reversals" 
+                      data={technicalData.bullishReversals} 
+                      columns={[
+                        { header: "Company", accessor: "company", width: "40%" },
+                        { header: "Price", accessor: "price", width: "30%" },
+                        { header: "Pattern", accessor: "pattern", width: "30%" }
+                      ]}
+                    />
+                    <DashboardCard 
+                      title="Bearish Reversals" 
+                      data={technicalData.bearishReversals} 
+                      columns={[
+                        { header: "Company", accessor: "company", width: "40%" },
+                        { header: "Price", accessor: "price", width: "30%" },
+                        { header: "Pattern", accessor: "pattern", width: "30%" }
+                      ]}
+                    />
+                    <DashboardCard 
+                      title="Bullish Engulfing" 
+                      data={technicalData.bullishEngulfing} 
+                      columns={[
+                        { header: "Company", accessor: "company", width: "40%" },
+                        { header: "Price", accessor: "price", width: "30%" },
+                        { header: "Pattern", accessor: "pattern", width: "30%" }
+                      ]}
+                    />
+                    <DashboardCard 
+                      title="Bearish Engulfing" 
+                      data={technicalData.bearishEngulfing} 
+                      columns={[
+                        { header: "Company", accessor: "company", width: "40%" },
+                        { header: "Price", accessor: "price", width: "30%" },
+                        { header: "Pattern", accessor: "pattern", width: "30%" }
+                      ]}
+                    />
+                  </TabPanel>
+                </Tabs>
+              </div>
+            </TabPanel>
+          </Tabs>
+        </div>
+      </div>
+
+      <div className="chart-gallery">
+        <h3>Available Chart Types</h3>
+        <div className="gallery-grid">
+          {chartTypes.map(chart => (
+            <div 
+              key={chart.id}
+              className={`gallery-item ${activeChartType === chart.id ? 'active' : ''}`}
+              onClick={() => setActiveChartType(chart.id)}
+            >
+              <span className="chart-icon">{chart.icon}</span>
+              <span className="chart-name">{chart.name}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const DashboardCard = ({ title, data, columns, rowSpacing = "0.5rem" }) => {
+  const [showAll, setShowAll] = useState(false);
+  const displayData = showAll ? data : data.slice(0, 4);
+
+  const styles = {
+    card: {
+      transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+      ':hover': {
+        transform: 'translateY(-5px)',
+        boxShadow: '0 10px 20px rgba(0,0,0,0.1)'
+      }
+    },
+    tableRow: {
+      transition: 'background-color 0.2s ease',
+      ':hover': {
+        backgroundColor: '#f5f5f5',
+        cursor: 'pointer'
+      }
+    },
+    viewAllButton: {
+      transition: 'all 0.2s ease',
+      ':hover': {
+        transform: 'scale(1.05)'
+      }
+    }
+  };
+
+  return (
+    <div 
+      className="card shadow-sm mb-4" 
+      style={{
+        ...styles.card,
+        border: '1px solid rgba(0,0,0,0.1)',
+        overflow: 'hidden'
+      }}
+    >
+      <div 
+        className="card-header bg-primary text-white d-flex justify-content-between align-items-center"
+        style={{
+          borderBottom: '1px solid rgba(0,0,0,0.1)',
+          padding: '0.75rem 1.25rem'
+        }}
+      >
+        <h6 className="mb-0" style={{ fontWeight: '600' }}>{title}</h6>
+        {data.length > 4 && (
+          <button 
+            className="btn btn-sm btn-light"
+            onClick={() => setShowAll(!showAll)}
+            style={{
+              ...styles.viewAllButton,
+              padding: '0.25rem 0.5rem',
+              fontSize: '0.8rem',
+              borderRadius: '4px'
+            }}
+          >
+            {showAll ? 'Show Less' : `View All (${data.length})`}
+          </button>
+        )}
+      </div>
+      <div className="card-body p-0">
+        <div className="table-responsive">
+          <table 
+            className="table table-bordered table-hover mb-0 w-100"
+            style={{
+              margin: 0,
+              borderCollapse: 'collapse'
+            }}
+          >
+            <thead>
+              <tr>
+                {columns.map((col, index) => (
+                  <th 
+                    key={index} 
+                    className="text-center align-middle"
+                    style={{ 
+                      width: col.width,
+                      padding: rowSpacing,
+                      backgroundColor: "#f8f9fa",
+                      fontSize: "0.95rem",
+                      fontWeight: '600',
+                      borderBottom: '2px solid #dee2e6'
+                    }}
+                  >
+                    {col.header}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {displayData.map((row, rowIndex) => (
+                <tr 
+                  key={rowIndex}
+                  style={{
+                    ...styles.tableRow,
+                    borderBottom: '1px solid #dee2e6'
+                  }}
+                >
+                  {columns.map((col, colIndex) => (
+                    <td 
+                      key={colIndex}
+                      className="text-center align-middle"
+                      style={{
+                        padding: rowSpacing,
+                        fontSize: "0.9rem",
+                        whiteSpace: "nowrap",
+                        transition: 'background-color 0.2s ease',
+                        color: col.isChange ? 
+                          (row[col.accessor]?.startsWith("+") ? "#28a745" : 
+                           row[col.accessor]?.startsWith("-") ? "#dc3545" : "inherit") : "inherit",
+                        borderRight: '1px solid #dee2e6',
+                        ':hover': {
+                          backgroundColor: '#e9ecef'
+                        }
+                      }}
+                    >
+                      {row[col.accessor]}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default TechnicalDashboard;
